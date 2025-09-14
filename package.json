@@ -1,0 +1,17 @@
+{
+  "name": "audio-app",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "node-record-lpcm16": "^1.0.1",
+    "play-sound": "^1.1.6"
+  }
+}
