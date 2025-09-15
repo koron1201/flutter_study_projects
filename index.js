@@ -9,7 +9,9 @@ const player = require('play-sound')();
 class AudioApp {
     constructor() {
         this.recordingsDir = './recordings';
+        this.favoritesDir = path.join(this.recordingsDir, 'favorites');
         this.ensureRecordingsDir();
+        this.ensureFavoritesDir();
     }
 
     // recordingsディレクトリが存在しない場合は作成
@@ -17,6 +19,14 @@ class AudioApp {
         if (!fs.existsSync(this.recordingsDir)) {
             fs.mkdirSync(this.recordingsDir);
             console.log(`📁 ${this.recordingsDir} ディレクトリを作成しました`);
+        }
+    }
+
+    // お気に入りディレクトリが存在しない場合は作成
+    ensureFavoritesDir() {
+        if (!fs.existsSync(this.favoritesDir)) {
+            fs.mkdirSync(this.favoritesDir, { recursive: true });
+            console.log(`📁 ${this.favoritesDir} ディレクトリを作成しました`);
         }
     }
 
@@ -61,6 +71,7 @@ class AudioApp {
                 const cp = spawn('sox', args, { stdio: ['ignore', 'ignore', 'pipe'] });
 
                 let soxErr = '';
+
                 cp.stderr.on('data', (chunk) => { soxErr += chunk.toString(); });
 
                 const cleanup = () => {
@@ -73,16 +84,16 @@ class AudioApp {
                         try {
                             const st = fs.statSync(filepath);
                             if (st.size > 100) {
-                                console.log(`✅ 録音完了: ${filepath}`);
+                                console.log(` 録音完了: ${filepath}`);
                                 return resolve(filepath);
                             }
                         } catch {}
                         try { fs.unlinkSync(filepath); } catch {}
-                        console.error('❌ 録音エラー: 出力が空です');
+                        console.error(' 録音エラー: 出力が空です');
                         return resolve();
                     }
                     try { fs.unlinkSync(filepath); } catch {}
-                    console.error('❌ 録音エラー(sox):', soxErr.trim() || `exit code ${code}`);
+                    console.error(' 録音エラー(sox):', soxErr.trim() || `exit code ${code}`);
                     console.log('ヒント: 設定 > プライバシーとセキュリティ > マイク でアプリのマイクアクセスを許可してください。既定の入力デバイスが有効かも確認してください。');
                     resolve();
                 };
@@ -200,6 +211,42 @@ class AudioApp {
         return files;
     }
 
+    // 録音をお気に入りに移動
+    async moveRecordingToFavorites() {
+        const files = this.listRecordings();
+        if (files.length === 0) return;
+
+        const fileIndex = await this.getUserInput('お気に入りに移動するファイルの番号を入力してください: ');
+        const index = parseInt(fileIndex) - 1;
+
+        if (!(index >= 0 && index < files.length)) {
+            console.log('❌ 無効な番号です');
+            return;
+        }
+
+        try {
+            this.ensureFavoritesDir();
+            const selected = files[index];
+            const srcPath = path.join(this.recordingsDir, selected);
+            const parsed = path.parse(selected);
+            let destPath = path.join(this.favoritesDir, selected);
+
+            if (fs.existsSync(destPath)) {
+                const candidate = path.join(this.favoritesDir, `${parsed.name}_favorite${parsed.ext}`);
+                if (!fs.existsSync(candidate)) {
+                    destPath = candidate;
+                } else {
+                    destPath = path.join(this.favoritesDir, `${parsed.name}_favorite_${Date.now()}${parsed.ext}`);
+                }
+            }
+
+            fs.renameSync(srcPath, destPath);
+            console.log(`⭐ お気に入りに移動しました: ${path.basename(destPath)}`);
+        } catch (error) {
+            console.error('❌ お気に入りへの移動に失敗しました:', error.message);
+        }
+    }
+
     // メインメニュー
     async showMenu() {
         console.log('\n🎵 音声録音・再生アプリ');
@@ -208,7 +255,8 @@ class AudioApp {
         console.log('2. 録音する (カスタム時間)');
         console.log('3. 録音ファイル一覧');
         console.log('4. 録音を再生');
-        console.log('5. 終了');
+        console.log('5. お気に入りに移動');
+        console.log('6. 終了');
         console.log('========================');
     }
 
@@ -234,7 +282,7 @@ class AudioApp {
         
         while (true) {
             await this.showMenu();
-            const choice = await this.getUserInput('選択してください (1-5): ');
+            const choice = await this.getUserInput('選択してください (1-6): ');
 
             switch (choice) {
                 case '1':
@@ -277,6 +325,10 @@ class AudioApp {
                     break;
 
                 case '5':
+                    await this.moveRecordingToFavorites();
+                    break;
+
+                case '6':
                     console.log('👋 アプリケーションを終了します');
                     process.exit(0);
 
