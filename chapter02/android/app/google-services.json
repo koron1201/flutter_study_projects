@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "665956839552",
+    "project_id": "flutter-rememmber",
+    "storage_bucket": "flutter-rememmber.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:665956839552:android:9f59ae620180ba13ca3665",
+        "android_client_info": {
+          "package_name": "com.example.chapter02"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCssq1XjuAmn3ZL3x74nUIulsb7oBkW5ns"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
